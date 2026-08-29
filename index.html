@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NVIDIA GPU 选型对比终端</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050810; --panel:#0c1220; --panel2:#111a2b; --line:#1a2540;
+  --txt:#e2e8f0; --dim:#8b9bb4; --faint:#55647d;
+  --grn:#76b900; --grn-glow:rgba(118,185,0,.35); --cyn:#22d3ee; --amb:#fbbf24; --red:#f87171;
+  --mono:'JetBrains Mono','PingFang SC','Microsoft YaHei',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;border-radius:0}
+*:focus{outline:none}
+*:focus-visible{box-shadow:0 0 0 2px var(--grn)}
+html{background:var(--bg)}
+body{
+  background:
+    repeating-linear-gradient(0deg,transparent 0 2px,rgba(255,255,255,.012) 2px 3px),
+    radial-gradient(1200px 500px at 70% -10%,rgba(118,185,0,.06),transparent),
+    var(--bg);
+  color:var(--txt); font-family:var(--mono); font-size:13px; min-height:100vh;
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--line)}
+::-webkit-scrollbar-thumb:hover{background:var(--grn)}
+::selection{background:var(--grn);color:#000}
+
+/* ===== header ===== */
+header{
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;
+  padding:10px 20px;background:rgba(5,8,16,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.led{width:8px;height:8px;background:var(--grn);box-shadow:0 0 8px var(--grn-glow);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.brand{font-size:15px;font-weight:700;letter-spacing:.22em}
+.brand small{display:block;font-size:9px;font-weight:300;letter-spacing:.32em;color:var(--dim);margin-top:2px}
+.hspace{flex:1}
+.selbadge{
+  border:1px solid var(--line);padding:6px 14px;font-size:11px;letter-spacing:.14em;color:var(--dim);
+  display:flex;align-items:center;gap:8px;background:var(--panel);
+}
+.selbadge b{color:var(--grn);font-size:14px}
+
+/* ===== ticker ===== */
+.ticker{border-bottom:1px solid var(--line);background:var(--panel);overflow:hidden;height:26px;display:flex;align-items:center}
+.ticker-inner{white-space:nowrap;animation:tick 60s linear infinite;color:var(--faint);font-size:10px;letter-spacing:.12em}
+.ticker:hover .ticker-inner{animation-play-state:paused}
+@keyframes tick{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+
+/* ===== layout ===== */
+.layout{display:grid;grid-template-columns:280px 1fr 320px;gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+.panel{background:var(--panel);padding:14px;min-height:60vh}
+.panel h2{font-size:9px;font-weight:500;letter-spacing:.3em;color:var(--dim);text-transform:uppercase;margin-bottom:10px}
+.panel h2 span{color:var(--faint);letter-spacing:.1em}
+
+/* ===== left: model picker ===== */
+.search{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);font-family:var(--mono);font-size:11px;padding:7px 10px;margin-bottom:8px}
+.search::placeholder{color:var(--faint)}
+.cats{display:flex;gap:1px;margin-bottom:10px}
+.catf{flex:1;background:var(--bg);border:1px solid var(--line);color:var(--dim);font-size:10px;padding:5px 2px;cursor:pointer;font-family:var(--mono);letter-spacing:.05em;text-align:center}
+.catf:hover{color:var(--txt)}
+.catf.on{background:var(--grn);color:#000;border-color:var(--grn);font-weight:700}
+.gen{border:1px solid var(--line);margin-bottom:6px;background:var(--bg)}
+.gen-h{display:flex;align-items:center;padding:7px 10px;cursor:pointer;user-select:none}
+.gen-h:hover{background:var(--panel2)}
+.gen-h .arrow{font-size:9px;color:var(--grn);width:14px;transition:transform .3s}
+.gen.closed .gen-h .arrow{transform:rotate(-90deg)}
+.gen-h .gname{font-size:11px;font-weight:700;letter-spacing:.08em}
+.gen-h .gcount{margin-left:auto;font-size:9px;color:var(--faint)}
+.gen-body{overflow:hidden;transition:max-height .42s cubic-bezier(.4,0,.2,1)}
+.gen.closed .gen-body{max-height:0!important}
+.mitem{display:flex;align-items:center;gap:8px;padding:6px 10px 6px 22px;cursor:pointer;border-top:1px solid rgba(26,37,64,.5)}
+.mitem:hover{background:var(--panel2)}
+.mitem .node{width:10px;height:10px;border:1px solid var(--faint);border-radius:50%;position:relative;flex:none;transition:.2s}
+.mitem.on .node{border-color:var(--grn);box-shadow:0 0 6px var(--grn-glow)}
+.mitem.on .node::after{content:'';position:absolute;inset:2px;background:var(--grn);border-radius:50%}
+.mitem .mname{font-size:11px;flex:1;line-height:1.3}
+.mitem.on .mname{color:var(--grn)}
+.mitem .tag{font-size:8px;letter-spacing:.1em;padding:1px 4px;border:1px solid var(--line);color:var(--faint);flex:none}
+.mitem .tag.eol{color:var(--amb);border-color:rgba(251,191,36,.4)}
+.mitem .mini{display:block;font-size:8px;color:var(--faint);margin-top:1px}
+
+/* ===== center ===== */
+.center{background:var(--bg);padding:16px 20px;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;min-height:30px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--grn);background:rgba(118,185,0,.08);color:var(--txt);font-size:11px;padding:5px 10px}
+.chip .x{color:var(--grn);cursor:pointer;font-weight:700;padding:0 2px}
+.chip .x:hover{color:var(--red)}
+.chips .hint{color:var(--faint);font-size:10px;letter-spacing:.1em}
+.btn{background:transparent;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:10px;letter-spacing:.12em;padding:6px 12px;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--txt);color:var(--bg);border-color:var(--txt)}
+
+.tabs{display:flex;flex-wrap:wrap;gap:1px;border:1px solid var(--line);width:max-content;max-width:100%;margin-bottom:18px;background:var(--line)}
+.tab{background:var(--panel);border:none;color:var(--dim);font-family:var(--mono);font-size:10px;padding:8px 13px;cursor:pointer;letter-spacing:.06em}
+.tab:hover{color:var(--txt);background:var(--panel2)}
+.tab.on{background:var(--grn);color:#000;font-weight:700}
+.tab .u{display:block;font-size:8px;font-weight:400;opacity:.75;margin-top:1px}
+
+/* ===== chart ===== */
+.charthead{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+.charthead .t{font-size:13px;font-weight:700;letter-spacing:.1em}
+.charthead .note{font-size:9px;color:var(--faint);letter-spacing:.08em}
+.bars{display:flex;flex-direction:column;gap:2px}
+.barrow{display:grid;grid-template-columns:210px 1fr 110px;align-items:center;gap:10px;padding:3px 0}
+.barrow .bn{font-size:11px;text-align:right;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barrow.best .bn{color:var(--grn);font-weight:700}
+.bartrack{height:22px;background:var(--panel);position:relative;border:1px solid rgba(26,37,64,.6)}
+.barfill{height:100%;background:linear-gradient(90deg,rgba(118,185,0,.55),var(--grn));width:0;transition:width .5s cubic-bezier(.22,1,.36,1)}
+.barrow.best .barfill{box-shadow:0 0 12px var(--grn-glow)}
+.barrow .bv{font-size:11px;color:var(--txt);font-weight:500}
+.barrow.best .bv{color:var(--grn)}
+.barrow.na .bn{color:var(--faint)}
+.barrow.na .bv{color:var(--faint);font-size:9px}
+.gridlines{position:relative;height:14px;margin:4px 0 0 220px;font-size:8px;color:var(--faint)}
+.gridlines span{position:absolute;transform:translateX(-50%)}
+.empty{border:1px dashed var(--line);padding:44px;text-align:center;color:var(--faint);font-size:11px;letter-spacing:.15em;line-height:2}
+
+/* callouts */
+.callouts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:18px}
+.co{background:var(--panel);padding:10px 14px}
+.co .l{font-size:9px;letter-spacing:.2em;color:var(--dim)}
+.co .v{font-size:16px;font-weight:700;margin-top:4px;color:var(--cyn)}
+.co .s{font-size:9px;color:var(--faint);margin-top:2px}
+
+/* ===== right panel ===== */
+.rsec{border-left:3px solid var(--grn);background:var(--bg);padding:10px 12px;margin-bottom:10px}
+.rsec.warn{border-left-color:var(--amb)}
+.rsec .rl{font-size:9px;letter-spacing:.2em;color:var(--dim);margin-bottom:6px}
+.rsec .rt{font-size:11px;line-height:1.8;color:var(--txt)}
+.rsec .rt b{color:var(--grn)}
+.legend{font-size:10px;color:var(--faint);line-height:2}
+
+/* ===== table ===== */
+.tablewrap{background:var(--panel);border-top:1px solid var(--line);padding:16px 20px;overflow-x:auto}
+.tablewrap h2{font-size:9px;letter-spacing:.3em;color:var(--dim);margin-bottom:12px}
+table{border-collapse:collapse;min-width:100%}
+th,td{border:1px solid var(--line);padding:7px 12px;font-size:11px;text-align:right;white-space:nowrap}
+th{background:var(--panel2);color:var(--txt);font-weight:700;position:sticky;top:0}
+td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:var(--panel2);color:var(--dim);font-size:10px;letter-spacing:.05em}
+td.best{color:var(--grn);font-weight:700;background:rgba(118,185,0,.07)}
+td.na{color:var(--faint)}
+footer{padding:14px 20px;color:var(--faint);font-size:9px;letter-spacing:.1em;line-height:1.9;border-top:1px solid var(--line)}
+.flash{animation:flash .4s}
+@keyframes flash{0%{box-shadow:0 0 0 2px var(--red)}100%{box-shadow:none}}
+@media (max-width:1200px){.layout{grid-template-columns:240px 1fr}.panel.right{display:none}}
+@media (max-width:860px){.layout{grid-template-columns:1fr}.barrow{grid-template-columns:130px 1fr 90px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="led"></div>
+  <div class="brand">GPU SELECTOR<small>英伟达 GPU 选型对比终端 · 65 款型号</small></div>
+  <div class="hspace"></div>
+  <div class="selbadge"><span>已选</span><b id="selcount">4</b><span>/ 8 款</span></div>
+</header>
+<div class="ticker"><div class="ticker-inner" id="ticker"></div></div>
+
+<div class="layout">
+  <!-- 左：型号库 -->
+  <aside class="panel left">
+    <h2>型号库 <span>// MODEL INDEX</span></h2>
+    <input class="search" id="search" placeholder="搜索型号 / SEARCH…">
+    <div class="cats" id="cats">
+      <button class="catf on" data-cat="">全部</button>
+      <button class="catf" data-cat="数据中心">数据中心</button>
+      <button class="catf" data-cat="专业工作站">工作站</button>
+      <button class="catf" data-cat="消费级">消费级</button>
+    </div>
+    <div id="modelist"></div>
+  </aside>
+
+  <!-- 中：图表 -->
+  <section class="center">
+    <div class="chips" id="chips"></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="charthead">
+      <div class="t" id="chart-title"></div>
+      <div class="note" id="chart-note"></div>
+      <div class="hspace"></div>
+      <button class="btn" id="sortbtn">按数值 ↓</button>
+    </div>
+    <div id="chart"></div>
+    <div class="callouts" id="callouts"></div>
+  </section>
+
+  <!-- 右：智能提示 -->
+  <aside class="panel right">
+    <h2>选型提示 <span>// INSIGHTS</span></h2>
+    <div id="insights"></div>
+    <h2 style="margin-top:16px">口径说明 <span>// NOTES</span></h2>
+    <div class="legend">
+      FP16 / TF32 / FP4 为 Tensor Core 算力，默认稠密口径；稀疏约为 2 倍（B300/GB300 约 1.33 倍）。<br>
+      FP64 Tensor 仅 GA100 / GH100 / GB100 数据中心大核支持；Blackwell Ultra（B300/GB300）FP64 大幅削减。<br>
+      INT4 仅 Turing / Ampere 提供口径；Ada / Hopper 对应 FP8，Blackwell 对应 FP4。<br>
+      INT8 为表中峰值口径（多含稀疏）。<br>
+      ≈ 为推算值；EOL 为已停产型号。<br>
+      GB300 NVL72 为整柜方案折算单 GPU 口径。<br>
+      RTX 5090D 为 5090 中国合规版（AI 算力限至 2,375 TOPS）。
+    </div>
+  </aside>
+</div>
+
+<div class="tablewrap">
+  <h2>参数明细表 <span>// SPEC MATRIX（每行绿色为最优值，TDP 行为最低值）</span></h2>
+  <table id="spec"><thead></thead><tbody></tbody></table>
+</div>
+
+<footer>
+  数据来源：随附《英伟达系列GPU对照_更新校正版.xlsx》参数对比表（2026-08 校对版） · 数值经文本解析，选型请以 NVIDIA 官方最新 Datasheet 为准 · 本工具为前端本地运行，不上传任何数据
+</footer>
+<script>
+const DATA = [{"name": "GB300 NVL72", "gen": "Blackwell Ultra", "arch": "GB300（Blackwell Ultra）", "cat": "数据中心", "eol": false, "cuda": 16896, "tensor": 528, "fp32": 83.0, "fp16nt": 166, "fp16d": 2500, "fp16s": 5000, "tf32d": 1250, "tf32s": 2500, "fp64": 1.4, "fp64t": 1.4, "int8": 375, "int4": null, "fp4d": 15.0, "fp4s": 20.0, "mem": 288.0, "bw": 8000.0, "tdp": 1400.0}, {"name": "B300 SXM", "gen": "Blackwell Ultra", "arch": "GB300（Blackwell Ultra）", "cat": "数据中心", "eol": false, "cuda": 16896, "tensor": 528, "fp32": 75.0, "fp16nt": 150, "fp16d": 2250, "fp16s": 4500, "tf32d": 1125, "tf32s": 2250, "fp64": 1.25, "fp64t": 1.25, "int8": 375, "int4": null, "fp4d": 13.5, "fp4s": 18.0, "mem": 288.0, "bw": 8000.0, "tdp": 1400.0}, {"name": "B200 SXM", "gen": "Blackwell", "arch": "GB100（Blackwell，双芯粒）", "cat": "数据中心", "eol": false, "cuda": 16896, "tensor": 528, "fp32": 75.0, "fp16nt": 150, "fp16d": 2250, "fp16s": 4500, "tf32d": 1125, "tf32s": 2250, "fp64": 37, "fp64t": 37, "int8": 9000, "int4": null, "fp4d": 9.0, "fp4s": 18.0, "mem": 192.0, "bw": 8000.0, "tdp": 1000.0}, {"name": "RTX PRO 6000 Blackwell", "gen": "Blackwell", "arch": "GB202（Blackwell）", "cat": "专业工作站", "eol": false, "cuda": 24064, "tensor": 752, "fp32": 125.0, "fp16nt": 125, "fp16d": 500.0, "fp16s": 1000.0, "tf32d": 250, "tf32s": 500, "fp64": 1.95, "fp64t": null, "int8": 2000, "int4": null, "fp4d": 2.0, "fp4s": 4.0, "mem": 96.0, "bw": 1792.0, "tdp": 600.0}, {"name": "RTX PRO 6000D Blackwell", "gen": "Blackwell", "arch": "GB202（Blackwell）", "cat": "专业工作站", "eol": false, "cuda": 19968, "tensor": 624, "fp32": 97.0, "fp16nt": 97, "fp16d": 388.0, "fp16s": 776.0, "tf32d": 194, "tf32s": 388, "fp64": 1.5, "fp64t": null, "int8": 1552, "int4": null, "fp4d": 1.6, "fp4s": 3.1, "mem": 84.0, "bw": 1398.0, "tdp": 600.0}, {"name": "RTX PRO 5000 Blackwell", "gen": "Blackwell", "arch": "GB202（Blackwell）", "cat": "专业工作站", "eol": false, "cuda": 14080, "tensor": 440, "fp32": 65.0, "fp16nt": 65, "fp16d": 260.0, "fp16s": 520.0, "tf32d": 130, "tf32s": 260, "fp64": 1.0, "fp64t": null, "int8": 1040, "int4": null, "fp4d": 1.0, "fp4s": 2.1, "mem": 48.0, "bw": 1344.0, "tdp": 300.0}, {"name": "RTX PRO 4500 Blackwell", "gen": "Blackwell", "arch": "GB203（Blackwell）", "cat": "专业工作站", "eol": false, "cuda": 10496, "tensor": 328, "fp32": 51.0, "fp16nt": 51, "fp16d": 204.0, "fp16s": 408.0, "tf32d": 102, "tf32s": 204, "fp64": 0.8, "fp64t": null, "int8": 816, "int4": null, "fp4d": 0.8, "fp4s": 1.6, "mem": 32.0, "bw": 896.0, "tdp": 200.0}, {"name": "RTX PRO 4000 Blackwell", "gen": "Blackwell", "arch": "GB203（Blackwell）", "cat": "专业工作站", "eol": false, "cuda": 8960, "tensor": 280, "fp32": 40.0, "fp16nt": 40, "fp16d": 160.0, "fp16s": 320.0, "tf32d": 80, "tf32s": 160, "fp64": 0.63, "fp64t": null, "int8": 640, "int4": null, "fp4d": 0.64, "fp4s": 1.29, "mem": 24.0, "bw": 672.0, "tdp": 145.0}, {"name": "RTX 5090", "gen": "Blackwell", "arch": "GB202（Blackwell）", "cat": "消费级", "eol": false, "cuda": 21760, "tensor": 680, "fp32": 104.8, "fp16nt": 104.8, "fp16d": 419.0, "fp16s": 838.0, "tf32d": 209, "tf32s": 419, "fp64": 1.64, "fp64t": null, "int8": 1676, "int4": null, "fp4d": 1.68, "fp4s": 3.35, "mem": 32.0, "bw": 1792.0, "tdp": 575.0}, {"name": "RTX 5090D", "gen": "Blackwell", "arch": "GB202（Blackwell）", "cat": "消费级", "eol": false, "cuda": 21760, "tensor": 680, "fp32": 104.8, "fp16nt": 104.8, "fp16d": 297.0, "fp16s": 595.0, "tf32d": 148, "tf32s": 297, "fp64": 1.64, "fp64t": null, "int8": 1190, "int4": null, "fp4d": 1.19, "fp4s": 2.38, "mem": 32.0, "bw": 1792.0, "tdp": 575.0}, {"name": "RTX 5080", "gen": "Blackwell", "arch": "GB203（Blackwell）", "cat": "消费级", "eol": false, "cuda": 10752, "tensor": 336, "fp32": 56.3, "fp16nt": 56.3, "fp16d": 225.4, "fp16s": 450.7, "tf32d": 112.7, "tf32s": 225.4, "fp64": 0.88, "fp64t": null, "int8": 901.4, "int4": null, "fp4d": 0.9, "fp4s": 1.8, "mem": 16.0, "bw": 960.0, "tdp": 360.0}, {"name": "RTX 5070 Ti", "gen": "Blackwell", "arch": "GB203（Blackwell）", "cat": "消费级", "eol": false, "cuda": 8960, "tensor": 280, "fp32": 43.9, "fp16nt": 43.9, "fp16d": 175.6, "fp16s": 351.3, "tf32d": 87.8, "tf32s": 175.6, "fp64": 0.69, "fp64t": null, "int8": 702.6, "int4": null, "fp4d": 0.7, "fp4s": 1.4, "mem": 16.0, "bw": 896.0, "tdp": 300.0}, {"name": "H200 SXM", "gen": "Hopper", "arch": "GH100（Hopper）", "cat": "数据中心", "eol": false, "cuda": 16896, "tensor": 528, "fp32": 67.0, "fp16nt": 267.6, "fp16d": 989.0, "fp16s": 1979.0, "tf32d": 494, "tf32s": 989, "fp64": 34, "fp64t": 67, "int8": 3958, "int4": null, "fp4d": null, "fp4s": null, "mem": 141.0, "bw": 4800.0, "tdp": 700.0}, {"name": "H200 PCIe（NVL）", "gen": "Hopper", "arch": "GH100（Hopper）", "cat": "数据中心", "eol": false, "cuda": 16896, "tensor": 528, "fp32": 60.0, "fp16nt": 240, "fp16d": 835.0, "fp16s": 1671.0, "tf32d": 418, "tf32s": 835, "fp64": 30, "fp64t": 60, "int8": 3341, "int4": null, "fp4d": null, "fp4s": null, "mem": 141.0, "bw": 4800.0, "tdp": 600.0}, {"name": "H100 SXM", "gen": "Hopper", "arch": "GH100（Hopper）", "cat": "数据中心", "eol": false, "cuda": 16896, "tensor": 528, "fp32": 67.0, "fp16nt": 267.6, "fp16d": 989, "fp16s": 1979.0, "tf32d": 494, "tf32s": 989, "fp64": 34, "fp64t": 67, "int8": 3958, "int4": null, "fp4d": null, "fp4s": null, "mem": 80.0, "bw": 3350.0, "tdp": 700.0}, {"name": "H800 SXM", "gen": "Hopper", "arch": "GH100（Hopper）", "cat": "数据中心", "eol": false, "cuda": 16896, "tensor": 528, "fp32": 67.0, "fp16nt": 267.6, "fp16d": 989, "fp16s": 1979.0, "tf32d": 494, "tf32s": 989, "fp64": 34, "fp64t": 67, "int8": 3958, "int4": null, "fp4d": null, "fp4s": null, "mem": 80.0, "bw": 3350.0, "tdp": 700.0}, {"name": "H100 PCIe", "gen": "Hopper", "arch": "GH100（Hopper）", "cat": "数据中心", "eol": false, "cuda": 14592, "tensor": 456, "fp32": 51.0, "fp16nt": 204, "fp16d": 756, "fp16s": 1513.0, "tf32d": 378, "tf32s": 756, "fp64": 26, "fp64t": 51, "int8": 3026, "int4": null, "fp4d": null, "fp4s": null, "mem": 80.0, "bw": 2000.0, "tdp": 350.0}, {"name": "H800 PCIe", "gen": "Hopper", "arch": "GH100（Hopper）", "cat": "数据中心", "eol": false, "cuda": 14592, "tensor": 456, "fp32": 51.0, "fp16nt": 204, "fp16d": 756, "fp16s": 1513.0, "tf32d": 378, "tf32s": 756, "fp64": 26, "fp64t": 51, "int8": 3026, "int4": null, "fp4d": null, "fp4s": null, "mem": 80.0, "bw": 2000.0, "tdp": 350.0}, {"name": "H20 SXM 96GB", "gen": "Hopper", "arch": "GH100（Hopper）", "cat": "数据中心", "eol": false, "cuda": 9984, "tensor": 312, "fp32": 44.0, "fp16nt": 176, "fp16d": 148.0, "fp16s": 296.0, "tf32d": 74, "tf32s": 148, "fp64": 1, "fp64t": 1, "int8": 592, "int4": null, "fp4d": null, "fp4s": null, "mem": 96.0, "bw": 4000.0, "tdp": 400.0}, {"name": "L40S", "gen": "Ada Lovelace", "arch": "AD102（Ada Lovelace）", "cat": "数据中心", "eol": false, "cuda": 18176, "tensor": 568, "fp32": 91.61, "fp16nt": 91.6, "fp16d": 362.05, "fp16s": 733.0, "tf32d": 183, "tf32s": 366, "fp64": 1.4, "fp64t": null, "int8": 1466, "int4": null, "fp4d": null, "fp4s": null, "mem": 48.0, "bw": 864.0, "tdp": 350.0}, {"name": "L40", "gen": "Ada Lovelace", "arch": "AD102（Ada Lovelace）", "cat": "数据中心", "eol": false, "cuda": 18176, "tensor": 568, "fp32": 90.52, "fp16nt": 90.5, "fp16d": 181.0, "fp16s": 362.0, "tf32d": 90.5, "tf32s": 181, "fp64": 1.4, "fp64t": null, "int8": 724, "int4": null, "fp4d": null, "fp4s": null, "mem": 48.0, "bw": 864.0, "tdp": 300.0}, {"name": "L20 PCIe", "gen": "Ada Lovelace", "arch": "AD102（Ada Lovelace）", "cat": "数据中心", "eol": false, "cuda": 11776, "tensor": 368, "fp32": 59.8, "fp16nt": 59.8, "fp16d": 119.5, "fp16s": 239.0, "tf32d": 59.8, "tf32s": 119.5, "fp64": 0.93, "fp64t": null, "int8": 478, "int4": null, "fp4d": null, "fp4s": null, "mem": 48.0, "bw": 864.0, "tdp": 275.0}, {"name": "L2 PCIe", "gen": "Ada Lovelace", "arch": "AD106（Ada Lovelace）", "cat": "数据中心", "eol": false, "cuda": 4608, "tensor": 144, "fp32": 24.1, "fp16nt": 24.1, "fp16d": 48.3, "fp16s": 96.5, "tf32d": 24.1, "tf32s": 48.3, "fp64": 0.38, "fp64t": null, "int8": 193, "int4": null, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 300.0, "tdp": 70.0}, {"name": "RTX4090", "gen": "Ada Lovelace", "arch": "AD102（Ada Lovelace）", "cat": "消费级", "eol": false, "cuda": 16384, "tensor": 512, "fp32": 82.6, "fp16nt": 82.6, "fp16d": 330.3, "fp16s": 660.6, "tf32d": 165.2, "tf32s": 330.3, "fp64": 1.29, "fp64t": null, "int8": 1321, "int4": null, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 1008.0, "tdp": 450.0}, {"name": "A800 SXM 80GB", "gen": "Ampere", "arch": "GA100 (Ampere)", "cat": "数据中心", "eol": false, "cuda": 6912, "tensor": 432, "fp32": 19.5, "fp16nt": 78, "fp16d": 312, "fp16s": 624, "tf32d": 156, "tf32s": 312, "fp64": 9.7, "fp64t": 19.5, "int8": 1248, "int4": 2496, "fp4d": null, "fp4s": null, "mem": 80.0, "bw": 2039.0, "tdp": 400.0}, {"name": "A800 PCIe 80GB", "gen": "Ampere", "arch": "GA100 (Ampere)", "cat": "数据中心", "eol": false, "cuda": 6912, "tensor": 432, "fp32": 19.5, "fp16nt": 78, "fp16d": 312, "fp16s": 624, "tf32d": 156, "tf32s": 312, "fp64": 9.7, "fp64t": 19.5, "int8": 1248, "int4": 2496, "fp4d": null, "fp4s": null, "mem": 80.0, "bw": 1935.0, "tdp": 250.0}, {"name": "A100 SXM4 40GB", "gen": "Ampere", "arch": "GA100 (Ampere)", "cat": "数据中心", "eol": false, "cuda": 6912, "tensor": 432, "fp32": 19.5, "fp16nt": 78, "fp16d": 312, "fp16s": 624, "tf32d": 156, "tf32s": 312, "fp64": 9.7, "fp64t": 19.5, "int8": 1248, "int4": 2496, "fp4d": null, "fp4s": null, "mem": 40.0, "bw": 1555.0, "tdp": 400.0}, {"name": "A100 PCIe 40GB", "gen": "Ampere", "arch": "GA100 (Ampere)", "cat": "数据中心", "eol": false, "cuda": 6912, "tensor": 432, "fp32": 19.5, "fp16nt": 78, "fp16d": 312, "fp16s": 624, "tf32d": 156, "tf32s": 312, "fp64": 9.7, "fp64t": 19.5, "int8": 1248, "int4": 2496, "fp4d": null, "fp4s": null, "mem": 40.0, "bw": 1555.0, "tdp": 250.0}, {"name": "A40", "gen": "Ampere", "arch": "GA102 (Ampere)", "cat": "数据中心", "eol": false, "cuda": 10752, "tensor": 336, "fp32": 37.4, "fp16nt": 37.4, "fp16d": 149.7, "fp16s": 299.3, "tf32d": 74.8, "tf32s": 149.7, "fp64": 0.58, "fp64t": null, "int8": 598.6, "int4": 1197, "fp4d": null, "fp4s": null, "mem": 48.0, "bw": 696.0, "tdp": 300.0}, {"name": "A40", "gen": "Ampere", "arch": "GA102 (Ampere)", "cat": "数据中心", "eol": false, "cuda": 10752, "tensor": 336, "fp32": 37.4, "fp16nt": 37.4, "fp16d": 149.7, "fp16s": 299.3, "tf32d": 74.8, "tf32s": 149.7, "fp64": 0.58, "fp64t": null, "int8": 598.6, "int4": 1197, "fp4d": null, "fp4s": null, "mem": 48.0, "bw": 696.0, "tdp": 300.0}, {"name": "A40", "gen": "Ampere", "arch": "GA102 (Ampere)", "cat": "数据中心", "eol": false, "cuda": 10752, "tensor": 336, "fp32": 37.4, "fp16nt": 37.4, "fp16d": 149.7, "fp16s": 299.3, "tf32d": 74.8, "tf32s": 149.7, "fp64": 0.58, "fp64t": null, "int8": 598.6, "int4": 1197, "fp4d": null, "fp4s": null, "mem": 48.0, "bw": 696.0, "tdp": 300.0}, {"name": "A30", "gen": "Ampere", "arch": "GA100（Ampere）", "cat": "数据中心", "eol": false, "cuda": 3584, "tensor": 224, "fp32": 10.3, "fp16nt": 41.2, "fp16d": 165, "fp16s": 330, "tf32d": 82.5, "tf32s": 165, "fp64": 5.2, "fp64t": 10.3, "int8": 661, "int4": 1321, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 933.0, "tdp": 165.0}, {"name": "A30", "gen": "Ampere", "arch": "GA100（Ampere）", "cat": "数据中心", "eol": false, "cuda": 3584, "tensor": 224, "fp32": 10.3, "fp16nt": 41.2, "fp16d": 165, "fp16s": 330, "tf32d": 82.5, "tf32s": 165, "fp64": 5.2, "fp64t": 10.3, "int8": 661, "int4": 1321, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 933.0, "tdp": 165.0}, {"name": "A10", "gen": "Ampere", "arch": "GA102（Ampere）", "cat": "数据中心", "eol": false, "cuda": 9216, "tensor": 288, "fp32": 31.2, "fp16nt": 31.2, "fp16d": 125, "fp16s": 250, "tf32d": 62.5, "tf32s": 125, "fp64": 0.97, "fp64t": null, "int8": 500, "int4": 1000, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 600.0, "tdp": 150.0}, {"name": "RTX A6000", "gen": "Ampere", "arch": "GA102 (Ampere)", "cat": "专业工作站", "eol": false, "cuda": 10752, "tensor": 336, "fp32": 38.7, "fp16nt": 38.7, "fp16d": 154.8, "fp16s": 309.7, "tf32d": 77.4, "tf32s": 154.8, "fp64": 0.61, "fp64t": null, "int8": 619.4, "int4": 1238.7, "fp4d": null, "fp4s": null, "mem": 48.0, "bw": 768.0, "tdp": 300.0}, {"name": "RTX 3090", "gen": "Ampere", "arch": "GA102 (Ampere)", "cat": "消费级", "eol": false, "cuda": 10496, "tensor": 328, "fp32": 35.6, "fp16nt": 35.6, "fp16d": 142.4, "fp16s": 284.7, "tf32d": 71.2, "tf32s": 142.4, "fp64": 0.56, "fp64t": null, "int8": 569.4, "int4": 1138.9, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 935.0, "tdp": 350.0}, {"name": "RTX 3080", "gen": "Ampere", "arch": "GA102 (Ampere)", "cat": "消费级", "eol": false, "cuda": 8704, "tensor": 272, "fp32": 29.8, "fp16nt": 29.8, "fp16d": 119.1, "fp16s": 238.2, "tf32d": 59.5, "tf32s": 119.1, "fp64": 0.47, "fp64t": null, "int8": 476.4, "int4": 952.8, "fp4d": null, "fp4s": null, "mem": 10.0, "bw": 760.0, "tdp": 320.0}, {"name": "RTX 3070", "gen": "Ampere", "arch": "GA104 (Ampere)", "cat": "消费级", "eol": false, "cuda": 5888, "tensor": 184, "fp32": 20.3, "fp16nt": 20.3, "fp16d": 81.3, "fp16s": 162.6, "tf32d": 40.6, "tf32s": 81.3, "fp64": 0.32, "fp64t": null, "int8": 325.2, "int4": 650.4, "fp4d": null, "fp4s": null, "mem": 8.0, "bw": 448.0, "tdp": 220.0}, {"name": "T4", "gen": "Turing", "arch": "TU104 (Turing)", "cat": "数据中心", "eol": false, "cuda": 2560, "tensor": 320, "fp32": 8.1, "fp16nt": 16.2, "fp16d": 65, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.25, "fp64t": null, "int8": 130, "int4": 260, "fp4d": null, "fp4s": null, "mem": 16.0, "bw": 320.0, "tdp": 75.0}, {"name": "RTX 8000", "gen": "Turing", "arch": "TU102 (Turing)", "cat": "专业工作站", "eol": false, "cuda": 4608, "tensor": 576, "fp32": 16.3, "fp16nt": 32.6, "fp16d": 130.5, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.51, "fp64t": null, "int8": 261, "int4": 522, "fp4d": null, "fp4s": null, "mem": 48.0, "bw": 672.0, "tdp": 260.0}, {"name": "RTX 8000", "gen": "Turing", "arch": "TU102 (Turing)", "cat": "专业工作站", "eol": false, "cuda": 4608, "tensor": 576, "fp32": 14.9, "fp16nt": 29.9, "fp16d": 119, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.47, "fp64t": null, "int8": 238, "int4": 477, "fp4d": null, "fp4s": null, "mem": 48.0, "bw": 624.0, "tdp": 250.0}, {"name": "RTX 6000", "gen": "Turing", "arch": "TU102 (Turing)", "cat": "专业工作站", "eol": false, "cuda": 4608, "tensor": 576, "fp32": 16.3, "fp16nt": 32.6, "fp16d": 130.5, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.51, "fp64t": null, "int8": 261, "int4": 522, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 672.0, "tdp": 260.0}, {"name": "RTX 6000", "gen": "Turing", "arch": "TU102 (Turing)", "cat": "专业工作站", "eol": false, "cuda": 4608, "tensor": 576, "fp32": 14.9, "fp16nt": 29.9, "fp16d": 119, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.47, "fp64t": null, "int8": 238, "int4": 477, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 624.0, "tdp": 250.0}, {"name": "RTX 5000", "gen": "Turing", "arch": "TU104 (Turing)", "cat": "专业工作站", "eol": false, "cuda": 3072, "tensor": 384, "fp32": 11.2, "fp16nt": 22.4, "fp16d": 89.2, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.35, "fp64t": null, "int8": 178, "int4": 357, "fp4d": null, "fp4s": null, "mem": 16.0, "bw": 448.0, "tdp": 230.0}, {"name": "RTX 4000", "gen": "Turing", "arch": "TU104 (Turing)", "cat": "专业工作站", "eol": false, "cuda": 2304, "tensor": 288, "fp32": 7.1, "fp16nt": 14.2, "fp16d": 57, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.22, "fp64t": null, "int8": 114, "int4": 228, "fp4d": null, "fp4s": null, "mem": 8.0, "bw": 416.0, "tdp": 125.0}, {"name": "Titan RTX", "gen": "Turing", "arch": "TU102 (Turing)", "cat": "消费级", "eol": false, "cuda": 4608, "tensor": 576, "fp32": 16.3, "fp16nt": 32.6, "fp16d": 130.5, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.51, "fp64t": null, "int8": 261, "int4": 522, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 672.0, "tdp": 280.0}, {"name": "RTX 2080 Ti (EOL)", "gen": "Turing", "arch": "TU102 (Turing)", "cat": "消费级", "eol": true, "cuda": 4352, "tensor": 544, "fp32": 13.4, "fp16nt": 26.9, "fp16d": 113.8, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.42, "fp64t": null, "int8": 227, "int4": 455, "fp4d": null, "fp4s": null, "mem": 11.0, "bw": 616.0, "tdp": 260.0}, {"name": "RTX 2080 SUPER  (EOL)", "gen": "Turing", "arch": "TU104 (Turing)", "cat": "消费级", "eol": true, "cuda": 3072, "tensor": 384, "fp32": 11.2, "fp16nt": 22.3, "fp16d": 89.2, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.35, "fp64t": null, "int8": 178, "int4": 357, "fp4d": null, "fp4s": null, "mem": 8.0, "bw": 496.0, "tdp": 250.0}, {"name": "RTX 2080 (EOL)", "gen": "Turing", "arch": "TU104 (Turing)", "cat": "消费级", "eol": true, "cuda": 2944, "tensor": 368, "fp32": 10.6, "fp16nt": 21.2, "fp16d": 84.8, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.33, "fp64t": null, "int8": 170, "int4": 339, "fp4d": null, "fp4s": null, "mem": 8.0, "bw": 448.0, "tdp": 225.0}, {"name": "RTX 2070 (EOL)", "gen": "Turing", "arch": "TU106 (Turing)", "cat": "消费级", "eol": true, "cuda": 2304, "tensor": 288, "fp32": 7.5, "fp16nt": 14.9, "fp16d": 59.7, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.23, "fp64t": null, "int8": 119, "int4": 239, "fp4d": null, "fp4s": null, "mem": 8.0, "bw": 448.0, "tdp": 185.0}, {"name": "V100S", "gen": "Volta", "arch": "GV100 (Volta)", "cat": "数据中心", "eol": false, "cuda": 5120, "tensor": 640, "fp32": 16.4, "fp16nt": 32.8, "fp16d": 130, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 8.2, "fp64t": null, "int8": 66, "int4": null, "fp4d": null, "fp4s": null, "mem": 32.0, "bw": 1134.0, "tdp": 250.0}, {"name": "V100 SXM2", "gen": "Volta", "arch": "GV100 (Volta)", "cat": "数据中心", "eol": false, "cuda": 5120, "tensor": 640, "fp32": 15.7, "fp16nt": 31.4, "fp16d": 125, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 7.8, "fp64t": null, "int8": 63, "int4": null, "fp4d": null, "fp4s": null, "mem": 32.0, "bw": 900.0, "tdp": 300.0}, {"name": "V100", "gen": "Volta", "arch": "GV100 (Volta)", "cat": "数据中心", "eol": false, "cuda": 5120, "tensor": 640, "fp32": 14.1, "fp16nt": 28.2, "fp16d": 112, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 7, "fp64t": null, "int8": 56, "int4": null, "fp4d": null, "fp4s": null, "mem": 32.0, "bw": 900.0, "tdp": 250.0}, {"name": "Titan V (EOL)", "gen": "Volta", "arch": "GV100 (Volta)", "cat": "消费级", "eol": true, "cuda": 5120, "tensor": 640, "fp32": 13.8, "fp16nt": 27.6, "fp16d": 110, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 6.9, "fp64t": null, "int8": 55, "int4": null, "fp4d": null, "fp4s": null, "mem": 12.0, "bw": 652.8, "tdp": 250.0}, {"name": "GV100 (EOL)", "gen": "Volta", "arch": "GV100 (Volta)", "cat": "数据中心", "eol": true, "cuda": 5120, "tensor": 640, "fp32": 14.8, "fp16nt": 29.6, "fp16d": 118.5, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 7.4, "fp64t": null, "int8": 59, "int4": null, "fp4d": null, "fp4s": null, "mem": 32.0, "bw": 870.0, "tdp": 250.0}, {"name": "GP100 (EOL)", "gen": "Pascal", "arch": "GP100 (Pascal)", "cat": "数据中心", "eol": true, "cuda": 3584, "tensor": null, "fp32": 10.3, "fp16nt": 20.7, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 5.2, "fp64t": null, "int8": null, "int4": null, "fp4d": null, "fp4s": null, "mem": 16.0, "bw": 717.0, "tdp": 235.0}, {"name": "P100 SXM2 (EOL)", "gen": "Pascal", "arch": "GP100 (Pascal)", "cat": "数据中心", "eol": true, "cuda": 3584, "tensor": null, "fp32": 10.6, "fp16nt": 21.2, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 5.3, "fp64t": null, "int8": null, "int4": null, "fp4d": null, "fp4s": null, "mem": 16.0, "bw": 732.0, "tdp": 300.0}, {"name": "P100 (EOL)", "gen": "Pascal", "arch": "GP100 (Pascal)", "cat": "数据中心", "eol": true, "cuda": 3584, "tensor": null, "fp32": 9.3, "fp16nt": 18.7, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 4.7, "fp64t": null, "int8": null, "int4": null, "fp4d": null, "fp4s": null, "mem": 16.0, "bw": 732.0, "tdp": 250.0}, {"name": "P40 (EOL)", "gen": "Pascal", "arch": "GP102 (Pascal)", "cat": "数据中心", "eol": true, "cuda": 3840, "tensor": null, "fp32": 12, "fp16nt": 0.18, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.36, "fp64t": null, "int8": 47, "int4": null, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 346.0, "tdp": 250.0}, {"name": "P4 (EOL)", "gen": "Pascal", "arch": "GP104 (Pascal)", "cat": "数据中心", "eol": true, "cuda": 2560, "tensor": null, "fp32": 5.5, "fp16nt": 0.09, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.17, "fp64t": null, "int8": 22, "int4": null, "fp4d": null, "fp4s": null, "mem": 8.0, "bw": 192.0, "tdp": 75.0}, {"name": "Titan Xp (EOL)", "gen": "Pascal", "arch": "GP102 (Pascal)", "cat": "消费级", "eol": true, "cuda": 3840, "tensor": null, "fp32": 12.1, "fp16nt": 0.19, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.38, "fp64t": null, "int8": 48, "int4": null, "fp4d": null, "fp4s": null, "mem": 12.0, "bw": 547.7, "tdp": 250.0}, {"name": "GTX 1080 Ti FE (EOL)", "gen": "Pascal", "arch": "GP102 (Pascal)", "cat": "消费级", "eol": true, "cuda": 3584, "tensor": null, "fp32": 11.4, "fp16nt": 0.18, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.36, "fp64t": null, "int8": 45, "int4": null, "fp4d": null, "fp4s": null, "mem": 11.0, "bw": 484.0, "tdp": 250.0}, {"name": "P6000 (EOL)", "gen": "Pascal", "arch": "GP102 (Pascal)", "cat": "专业工作站", "eol": true, "cuda": 3840, "tensor": null, "fp32": 12, "fp16nt": 0.19, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.37, "fp64t": null, "int8": 48, "int4": null, "fp4d": null, "fp4s": null, "mem": 24.0, "bw": 432.0, "tdp": 250.0}, {"name": "P5000 (EOL)", "gen": "Pascal", "arch": "GP104 (Pascal)", "cat": "专业工作站", "eol": true, "cuda": 2560, "tensor": null, "fp32": 8.9, "fp16nt": 0.14, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.28, "fp64t": null, "int8": 36, "int4": null, "fp4d": null, "fp4s": null, "mem": 16.0, "bw": 288.0, "tdp": 180.0}, {"name": "P4000 (EOL)", "gen": "Pascal", "arch": "GP104 (Pascal)", "cat": "专业工作站", "eol": true, "cuda": 1792, "tensor": null, "fp32": 5.3, "fp16nt": 0.08, "fp16d": null, "fp16s": null, "tf32d": null, "tf32s": null, "fp64": 0.25, "fp64t": null, "int8": 21, "int4": null, "fp4d": null, "fp4s": null, "mem": 8.0, "bw": 243.0, "tdp": 105.0}];
+const GENS = ['Blackwell Ultra','Blackwell','Hopper','Ada Lovelace','Ampere','Turing','Volta','Pascal','Kepler'];
+const METRICS = [
+  {k:'fp16d', t:'FP16 Tensor 稠密', u:'TFLOPS', note:'AI 训练/推理主口径'},
+  {k:'fp16s', t:'FP16 Tensor 稀疏', u:'TFLOPS', note:'稀疏加速口径（²）'},
+  {k:'fp16nt',t:'FP16 非Tensor', u:'TFLOPS', note:'CUDA 核心半精度（非 Tensor）'},
+  {k:'tf32d', t:'TF32 Tensor 稠密', u:'TFLOPS', note:'Ampere 起支持'},
+  {k:'tf32s', t:'TF32 Tensor 稀疏', u:'TFLOPS', note:'稀疏加速口径（²）'},
+  {k:'fp32',  t:'FP32 算力', u:'TFLOPS', note:'通用计算/渲染（非 Tensor）'},
+  {k:'fp64',  t:'FP64 非Tensor', u:'TFLOPS', note:'科学计算双精度'},
+  {k:'fp64t', t:'FP64 Tensor', u:'TFLOPS', note:'仅数据中心大核（GA100/GH100/GB100）支持'},
+  {k:'int8',  t:'INT8 峰值', u:'TOPS', note:'表中峰值（多含稀疏）'},
+  {k:'int4',  t:'INT4 峰值', u:'TOPS', note:'仅 Turing/Ampere；Ada/Hopper 对应 FP8，Blackwell 对应 FP4'},
+  {k:'fp4d',  t:'FP4 稠密', u:'PFLOPS', note:'仅 Blackwell 代支持'},
+  {k:'cuda',  t:'CUDA 核心数', u:'个', note:''},
+  {k:'mem',   t:'显存容量', u:'GB', note:'大模型选型关键'},
+  {k:'bw',    t:'显存带宽', u:'GB/s', note:'推理吞吐关键'},
+  {k:'tdp',   t:'TDP 功耗', u:'W', note:'越低越易部署', low:true},
+];
+const state = { sel:['GB300 NVL72','B200 SXM','H100 SXM','RTX 5090'], metric:'fp16d', sortDesc:true, cat:'', q:'' };
+const byName = Object.fromEntries(DATA.map(m=>[m.name,m]));
+
+/* ---------- 左侧型号库 ---------- */
+function renderList(){
+  const box = document.getElementById('modelist'); box.innerHTML='';
+  GENS.forEach(g=>{
+    const items = DATA.filter(m=>m.gen===g)
+      .filter(m=>!state.cat || m.cat===state.cat)
+      .filter(m=>!state.q || m.name.toLowerCase().includes(state.q));
+    if(!items.length) return;
+    const div = document.createElement('div'); div.className='gen';
+    const selInGen = items.filter(m=>state.sel.includes(m.name)).length;
+    div.innerHTML = `<div class="gen-h"><span class="arrow">▼</span><span class="gname">${g}</span>
+      <span class="gcount">${selInGen?selInGen+' 已选 / ':''}${items.length} 款</span></div>
+      <div class="gen-body"></div>`;
+    const bodyEl = div.querySelector('.gen-body');
+    items.forEach(m=>{
+      const it = document.createElement('div');
+      it.className='mitem'+(state.sel.includes(m.name)?' on':'');
+      it.innerHTML = `<span class="node"></span><span class="mname">${m.name}
+        <span class="mini">${m.mem?m.mem+'GB':''}${m.mem&&m.fp16d?' · ':''}${m.fp16d?fmt(m.fp16d)+'T':''}</span></span>
+        ${m.eol?'<span class="tag eol">EOL</span>':''}<span class="tag">${m.cat}</span>`;
+      it.onclick = ()=>toggle(m.name, it);
+      bodyEl.appendChild(it);
+    });
+    div.querySelector('.gen-h').onclick = ()=>div.classList.toggle('closed');
+    box.appendChild(div);
+    bodyEl.style.maxHeight = bodyEl.scrollHeight+'px';
+  });
+}
+document.getElementById('search').oninput = e=>{state.q=e.target.value.trim().toLowerCase();renderList();};
+document.querySelectorAll('.catf').forEach(b=>b.onclick=()=>{
+  state.cat=b.dataset.cat; document.querySelectorAll('.catf').forEach(x=>x.classList.toggle('on',x===b)); renderList();
+});
+
+function toggle(name, el){
+  const i = state.sel.indexOf(name);
+  if(i>=0){
+    if(state.sel.length<=1){ flash(document.getElementById('chips')); return; }
+    state.sel.splice(i,1);
+  }else{
+    if(state.sel.length>=8){ flash(document.querySelector('.selbadge')); return; }
+    state.sel.push(name);
+  }
+  renderAll();
+}
+function flash(el){ el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+
+/* ---------- chips ---------- */
+function renderChips(){
+  const c = document.getElementById('chips'); c.innerHTML='';
+  state.sel.forEach(n=>{
+    const d = document.createElement('span'); d.className='chip';
+    d.innerHTML = `${n}<span class="x" title="移除">✕</span>`;
+    d.querySelector('.x').onclick = ()=>toggle(n);
+    c.appendChild(d);
+  });
+  const h = document.createElement('span'); h.className='hint';
+  h.textContent = state.sel.length<1 ? '请至少选择 1 款' : (state.sel.length<8 ? '可再从左侧型号库添加（1~8 款）' : '已达上限 8 款');
+  c.appendChild(h);
+  document.getElementById('selcount').textContent = state.sel.length;
+}
+
+/* ---------- tabs & chart ---------- */
+function renderTabs(){
+  const t = document.getElementById('tabs'); t.innerHTML='';
+  METRICS.forEach(m=>{
+    const b = document.createElement('button'); b.className='tab'+(m.k===state.metric?' on':'');
+    b.innerHTML = `${m.t}<span class="u">${m.u}</span>`;
+    b.onclick = ()=>{state.metric=m.k; renderTabs(); renderChart(); renderTable();};
+    t.appendChild(b);
+  });
+}
+function fmt(v){ return v==null?'—':v.toLocaleString('en-US'); }
+function cur(){ return METRICS.find(m=>m.k===state.metric); }
+function renderChart(){
+  const M = cur();
+  document.getElementById('chart-title').textContent = M.t+'（'+M.u+'）';
+  document.getElementById('chart-note').textContent = M.note;
+  const box = document.getElementById('chart'); box.innerHTML='';
+  let rows = state.sel.map(n=>({m:byName[n], v:byName[n][M.k]}));
+  rows.sort((a,b)=> state.sortDesc ? (b.v??-1)-(a.v??-1) : (a.v??1e18)-(b.v??1e18));
+  const max = Math.max(...rows.map(r=>r.v??0), 0);
+  const bestV = M.low ? Math.min(...rows.filter(r=>r.v!=null).map(r=>r.v)) : max;
+  rows.forEach(r=>{
+    const div = document.createElement('div');
+    const isBest = r.v!=null && r.v===bestV && max>0;
+    div.className = 'barrow'+(r.v==null?' na':'')+(isBest?' best':'');
+    div.innerHTML = `<div class="bn" title="${r.m.name}">${r.m.name}</div>
+      <div class="bartrack"><div class="barfill" data-w="${r.v!=null&&max>0?(r.v/max*100):0}"></div></div>
+      <div class="bv">${fmt(r.v)}${r.v!=null?' '+M.u:''}</div>`;
+    box.appendChild(div);
+  });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    box.querySelectorAll('.barfill').forEach(f=>f.style.width=f.dataset.w+'%');
+  }));
+  // callouts
+  const sel = state.sel.map(n=>byName[n]);
+  const top = sel.filter(m=>m[M.k]!=null).sort((a,b)=> M.low? a[M.k]-b[M.k] : b[M.k]-a[M.k])[0];
+  const memTop = sel.filter(m=>m.mem!=null).sort((a,b)=>b.mem-a.mem)[0];
+  const tdpLow = sel.filter(m=>m.tdp!=null).sort((a,b)=>a.tdp-b.tdp)[0];
+  document.getElementById('callouts').innerHTML = `
+    <div class="co"><div class="l">本指标最优</div><div class="v">${top?top.name:'—'}</div><div class="s">${top?fmt(top[M.k])+' '+M.u:''}</div></div>
+    <div class="co"><div class="l">显存最大</div><div class="v">${memTop?memTop.name:'—'}</div><div class="s">${memTop?fmt(memTop.mem)+' GB':''}</div></div>
+    <div class="co"><div class="l">功耗最低</div><div class="v" style="color:var(--grn)">${tdpLow?tdpLow.name:'—'}</div><div class="s">${tdpLow?fmt(tdpLow.tdp)+' W':''}</div></div>`;
+  renderInsights(rows, M, max);
+}
+document.getElementById('sortbtn').onclick = e=>{
+  state.sortDesc=!state.sortDesc; e.target.textContent = state.sortDesc?'按数值 ↓':'按数值 ↑'; renderChart();
+};
+
+/* ---------- insights ---------- */
+function renderInsights(rows, M, max){
+  const ins = document.getElementById('insights'); ins.innerHTML='';
+  const valid = rows.filter(r=>r.v!=null);
+  if(valid.length>=2 && !M.low && valid[valid.length-1].v>0){
+    const r = (valid[0].v/valid[valid.length-1].v);
+    addIns(ins,'性能跨度',`所选型号 ${M.t} 相差约 <b>${r.toFixed(1)}×</b>（${valid[0].m.name} vs ${valid[valid.length-1].m.name}）`);
+  }
+  const gens = [...new Set(state.sel.map(n=>byName[n].gen))];
+  if(gens.length>1) addIns(ins,'架构跨度',`跨 ${gens.length} 代架构：${gens.join(' → ')}，注意 CUDA 特性与精度格式代差（FP8 自 Hopper/Ada 起，FP4 仅 Blackwell）。`);
+  const nofp4 = state.sel.filter(n=>byName[n].fp4d==null && ['Blackwell Ultra','Blackwell'].includes(byName[n].gen)===false);
+  if(M.k.startsWith('fp4') && nofp4.length) addIns(ins,'缺数提示',`${nofp4.join('、')} 不支持 FP4，柱状图留空属正常。`,true);
+  if(M.k==='int4'){ const noint4 = state.sel.filter(n=>byName[n].int4==null); if(noint4.length) addIns(ins,'缺数提示',`${noint4.join('、')} 无 INT4 口径：Ada/Hopper 请看 FP8（Excel 第22行），Blackwell 请看 FP4 页签。`,true); }
+  if(M.k==='tf32d'||M.k==='tf32s'){ const notf32 = state.sel.filter(n=>byName[n].tf32d==null); if(notf32.length) addIns(ins,'缺数提示',`${notf32.join('、')} 为 TF32 之前的架构（Turing 及更早不支持）。`,true); }
+  const big = state.sel.filter(n=>(byName[n].mem??0)>=80);
+  if(big.length) addIns(ins,'大显存',`${big.join('、')} 显存 ≥80GB，可本地承载 70B 级模型推理/微调。`);
+  const pw = state.sel.filter(n=>(byName[n].tdp??0)>=1000);
+  if(pw.length) addIns(ins,'部署提醒',`${pw.join('、')} 单卡功耗 ≥1000W，需液冷与高压直流配套（整柜方案另计）。`,true);
+}
+function addIns(box,l,t,warn){
+  const d=document.createElement('div'); d.className='rsec'+(warn?' warn':'');
+  d.innerHTML=`<div class="rl">${l}</div><div class="rt">${t}</div>`; box.appendChild(d);
+}
+
+/* ---------- spec table ---------- */
+const TROWS = [
+  ['架构','arch',null],['定位','cat',null],['CUDA 核心','cuda',1],['Tensor 核心','tensor',1],
+  ['FP32 非Tensor (TFLOPS)','fp32',1],['FP16 非Tensor (TFLOPS)','fp16nt',1],
+  ['FP16 Tensor 稠密 (TFLOPS)','fp16d',1],['FP16 Tensor 稀疏 (TFLOPS)','fp16s',1],
+  ['TF32 Tensor 稠密 (TFLOPS)','tf32d',1],['TF32 Tensor 稀疏 (TFLOPS)','tf32s',1],
+  ['FP64 非Tensor (TFLOPS)','fp64',1],['FP64 Tensor (TFLOPS)','fp64t',1],
+  ['INT8 峰值 (TOPS)','int8',1],['INT4 峰值 (TOPS)','int4',1],
+  ['FP4 稠密 (PFLOPS)','fp4d',1],['FP4 稀疏 (PFLOPS)','fp4s',1],
+  ['显存 (GB)','mem',1],['带宽 (GB/s)','bw',1],['TDP (W)','tdp',-1],
+];
+function renderTable(){
+  const tb = document.getElementById('spec');
+  tb.querySelector('thead').innerHTML = '<tr><th>参数</th>'+state.sel.map(n=>`<th>${n}</th>`).join('')+'</tr>';
+  const tbBody = tb.querySelector('tbody'); tbBody.innerHTML='';
+  TROWS.forEach(([label,key,num])=>{
+    const vals = state.sel.map(n=>byName[n][key]);
+    let best=null;
+    if(num){ const vv=vals.filter(v=>v!=null); if(vv.length) best = num>0?Math.max(...vv):Math.min(...vv); }
+    const tr=document.createElement('tr');
+    tr.innerHTML = '<td>'+label+'</td>' + vals.map(v=>{
+      const cls = v==null?'na':(num&&v===best?'best':'');
+      return `<td class="${cls}">${v==null?'—':fmt(v)}</td>`;
+    }).join('');
+    tbBody.appendChild(tr);
+  });
+}
+
+/* ---------- ticker ---------- */
+document.getElementById('ticker').textContent =
+  '口径提示：FP16/TF32/FP4 为 Tensor 稠密算力 · 稀疏口径约为 2×（B300/GB300 约 1.33×） · INT8 取表中峰值 · INT4 仅 Turing/Ampere（Ada/Hopper 对应 FP8）· ≈ 为推算值 · GB300 NVL72 为整柜折算单 GPU · RTX 5090D AI 算力限至 2,375 TOPS · EOL = 已停产 · 新增：GB300 / B300 / RTX PRO 6000/6000D/5000/4500/4000 Blackwell / RTX 5090/5090D · ';
+
+function renderAll(){ renderList(); renderChips(); renderChart(); renderTable(); }
+renderTabs(); renderAll();
+</script>
+</body>
+</html>
